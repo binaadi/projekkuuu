@@ -1,0 +1,81 @@
+/* Styling tabel users */
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.users-table th,
+.users-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+
+.users-table th {
+  background: #f4f6f8;
+  font-weight: 600;
+}
+
+.users-table tr:hover {
+  background: #fafafa;
+}
+
+/* Badge styling */
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  font-size: 0.8em;
+  border-radius: 6px;
+}
+
+.badge-user {
+  background: #007bff;
+  color: white;
+}
+
+.badge-admin {
+  background: #28a745;
+  color: white;
+}
+
+/* Aksi button */
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
+.actions form {
+  display: inline-block;
+}
+
+.btn-danger {
+  background: #dc3545;
+  border: none;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-danger:hover {
+  background: #c82333;
+}
+
+.btn-warning {
+  background: #ffc107;
+  border: none;
+  color: #333;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-warning:hover {
+  background: #e0a800;
+}
+
+.self-note {
+  font-size: 0.9em;
+  color: #666;
+  font-style: italic;
+}

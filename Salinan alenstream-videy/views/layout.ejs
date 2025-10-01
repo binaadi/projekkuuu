@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title><%= title || "Alenstream" %></title>
+<link rel="icon" type="image/png" href="/image/logo.png" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/css/style.css" />
+
+  <% if (activePage === "dashboard") { %>
+    <link rel="stylesheet" href="/css/dashboard.css" />
+  <% } %>
+  <% if (activePage === "remot") { %>
+    <link rel="stylesheet" href="/css/remot.css" />
+  <% } %>
+  <% if (activePage === "upload") { %>
+    <link rel="stylesheet" href="/css/upload.css" />
+  <% } %>
+   <% if (activePage === "videos") { %>
+    <link rel="stylesheet" href="/css/videos.css" />
+  <% } %>
+  <% if (activePage === "withdraw") { %>
+    <link rel="stylesheet" href="/css/withdraw.css" />
+  <% } %>
+</head>
+<body>
+  <!-- Navbar global -->
+  <%- include('partials/navbar') %>
+
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!-- TOPBAR -->
+  <div class="topbar">
+    <div class="logo"><span class="alena">ALENA</span><span class="stream">STREAM</span></div>
+    <div class="user-info">
+  
+      <div class="dropdown">
+        <button class="dropbtn" id="userBtn">
+          <i class="fas fa-user-circle"></i>
+          <span id="username"><%= user?.username %></span>
+
+
+
+          <i class="fas fa-caret-down"></i>
+        </button>
+        <div class="dropdown-content">
+          <a href="/settings"><i class="fas fa-cog"></i> Settings</a>
+          <a href="#" id="btnLogout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVBAR -->
+  <div class="navbar">
+  <a href="/dashboard" class="nav-item <%= activePage==='dashboard' ? 'active' : '' %>">
+    <i class="fas fa-chart-line"></i> Dashboard
+  </a>
+  <a href="/videos" class="nav-item <%= activePage==='videos' ? 'active' : '' %>">
+    <i class="fas fa-video"></i> My Video
+  </a>
+  <a href="/remot" class="nav-item <%= activePage==='remot' ? 'active' : '' %>">
+    <i class="fas fa-cloud-upload-alt"></i> Remote Upload
+  </a>
+  <a href="/upload" class="nav-item <%= activePage==='upload' ? 'active' : '' %>">
+    <i class="fas fa-upload"></i> Upload Video
+  </a>
+</div>

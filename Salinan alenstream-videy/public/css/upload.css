@@ -1,0 +1,9 @@
+   /* .container { max-width: 800px; margin: 30px auto; padding: 0 20px; } */
+    h2 { color: #111; font-size: 20px; margin-bottom: 20px; text-align: center; }
+    .card { padding: 20px; border-radius: 12px; background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 2px 6px rgba(0,0,0,0.05); text-align: center; }
+    input[type="file"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; }
+    .btn-remote { padding: 10px 16px; border: none; border-radius: 8px; background: #0d6efd; color: #fff; font-size: 14px; cursor: pointer; margin-top: 15px; transition: background 0.2s;}
+    .btn-remote:hover { background: #0045a5; }
+    #progressBar { width: 100%; height: 20px; margin-top: 15px; border-radius: 8px; overflow: hidden; background: #e5e7eb; }
+    #progressFill { height: 100%; width: 0%; background: #0d6efd; transition: width 0.2s; }
+    #uploadMsg { font-size: 13px; margin-top: 8px; color: #555; }

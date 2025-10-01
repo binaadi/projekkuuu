@@ -1,0 +1,94 @@
+
+  <!-- CONTENT -->
+  <div class="container">
+    <div class="card">
+      <h2>📤 Upload Video → Videy</h2>
+      <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="file" name="file" accept="video/*" required/>
+        <button type="submit" class="btn-remote">
+        <i class="fas fa-upload"></i> Upload
+        </button>
+      </form>
+      <div id="progressBar"><div id="progressFill"></div></div>
+      <div id="uploadMsg"></div>
+    </div>
+  </div>
+
+  <!-- Script Upload + Dropdown -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // Toggle dropdown
+      document.getElementById("userBtn").addEventListener("click", () => {
+        document.querySelector(".dropdown").classList.toggle("show");
+      });
+
+      // Upload logic
+      const form = document.getElementById("uploadForm");
+      const progressFill = document.getElementById("progressFill");
+      const msg = document.getElementById("uploadMsg");
+      const fileInput = document.getElementById("file");
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        let visitorId = localStorage.getItem("visitorId");
+        if (!visitorId) {
+          visitorId = crypto.randomUUID();
+          localStorage.setItem("visitorId", visitorId);
+        }
+
+        const fd = new FormData();
+        fd.append("file", file);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", `https://videy.co/api/upload?visitorId=${encodeURIComponent(visitorId)}`, true);
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            progressFill.style.width = percent + "%";
+          }
+        };
+
+        xhr.onload = async () => {
+          if (xhr.status === 200) {
+            try {
+              const result = JSON.parse(xhr.responseText);
+              const link = result?.link || "";
+              const u = new URL(link);
+              const videoId = u.searchParams.get("id") || link.split("/").pop();
+
+              msg.textContent = "Upload selesai 🎉 menyimpan metadata...";
+
+              await fetch("/api/videos", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  title: file.name.replace(/\.[^/.]+$/, ""),
+                  source: "videy",
+                  video_id: videoId,
+                }),
+                credentials: "include",
+              });
+
+              msg.textContent = "Sukses ✅, mengarahkan ke daftar video...";
+              setTimeout(() => (location.href = "/videos"), 1200);
+            } catch {
+              msg.textContent = "Upload ke Videy gagal parsing.";
+            }
+          } else {
+            msg.textContent = "Upload gagal ke Videy ❌";
+          }
+        };
+
+        xhr.onerror = () => {
+          msg.textContent = "Network error saat upload ❌";
+        };
+
+        xhr.send(fd);
+      });
+    });
+  </script>
+

@@ -1,0 +1,270 @@
+
+
+  <!-- CONTENT -->
+  <div class="container">
+    <div class="card">
+      <div class="card-header">
+        <h2>🎥 Daftar Video</h2>
+        <button id="btnRefresh" class="refresh-btn" type="button"><i class="fas fa-sync-alt"></i> Refresh</button>
+      </div>
+
+      <% if (videos && videos.length > 0) { %>
+      <ul class="video-list" id="videoList">
+        <% videos.forEach(v => { %>
+        <li class="video-item">
+          <div class="video-left">
+            <input type="checkbox" class="video-check" value="<%= v.id %>" data-token="<%= v.embed_token %>"/>
+            <i class="fas fa-video"></i>
+            <div>
+              <strong><%= v.title %></strong>
+              <small>Dibuat: <%= v.created_at %></small>
+            </div>
+          </div>
+          <div class="actions">
+            <a href="/e/<%= v.embed_token %>" target="_blank"><i class="fas fa-play"></i> Tonton</a>
+            <button class="action-btn rename" type="button" data-id="<%= v.id %>" data-title="<%= v.title %>"><i class="fas fa-edit"></i></button>
+            <button class="action-btn share" type="button" data-token="<%= v.embed_token %>"><i class="fas fa-share-alt"></i></button>
+            <button class="action-btn delete" type="button" data-id="<%= v.id %>"><i class="fas fa-trash"></i></button>
+          </div>
+        </li>
+        <% }) %>
+      </ul>
+
+        <div class="pager">
+        <div class="pager-group">
+        <button id="prevPage" type="button">← Prev</button>
+        <span id="pageInfo">Page 1</span>
+        <button id="nextPage" type="button">Next →</button>
+        </div>
+        <div class="pager-group">
+        <label for="perPage">Tampil:</label>
+        <select id="perPage">
+        <option value="10" selected>10</option>
+        <option value="20">20</option>
+        <option value="50">50</option>
+        </select>
+        </div>
+        </div>
+
+
+      <% } else { %>
+        <p>Tidak ada video yang diupload.</p>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- BULK BOX -->
+  <div class="bulk-bar" id="bulkBar">
+    <span id="selectedCount">0 video dipilih</span>
+    <button id="bulkShare" type="button"><i class="fas fa-share-alt"></i> Share</button>
+    <button id="bulkDelete" type="button"><i class="fas fa-trash"></i> Hapus</button>
+    <button id="bulkCancel" type="button"><i class="fas fa-times"></i> Cancel</button>
+  </div>
+
+  <!-- SHARE MODAL -->
+  <div class="modal" id="shareModal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <h3>🔗 Share Video</h3>
+      <div class="form-group">
+        <label>Jenis Link:</label>
+        <div class="radio-group">
+          <label><input type="radio" name="linkType" value="e" checked> Embed (/e/)</label>
+          <label><input type="radio" name="linkType" value="v"> Streaming (/v/)</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="domainSelect">Domain:</label>
+        <select id="domainSelect">
+          <option value="https://alenstream.site">alenstream.site</option>
+          <option value="https://cdn.alenastream.net">cdn.alenastream.net</option>
+          <option value="https://video.alena.id">video.alena.id</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Link Hasil:</label>
+        <textarea id="shareLinks" readonly></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" type="button" onclick="closeModal('shareModal')">Tutup</button>
+        <button class="btn-save" type="button" onclick="copyShare()">Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RENAME MODAL -->
+  <!-- RENAME MODAL -->
+  <div class="modal" id="renameModal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <h3>✏️ Rename Video</h3>
+      <input type="text" id="renameInput" placeholder="Masukkan judul baru">
+      <div class="modal-actions">
+        <button class="btn-cancel" type="button" onclick="closeModal('renameModal')">Batal</button>
+        <button class="btn-save" type="button" id="saveRename">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script>
+  // Dropdown toggle
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("userBtn").addEventListener("click", () => {
+        document.querySelector(".dropdown").classList.toggle("show");
+      });
+
+      // Logout
+      document.getElementById("btnLogout").addEventListener("click", async (e) => {
+        e.preventDefault();
+        await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+        location.href = "/";
+      });
+    });
+</script>
+
+
+  <script>
+    let selectedVideos = [];
+    let currentVideoId = null;
+    let currentPage = 1;
+    let perPage = 10;
+
+    function openModal(id){ document.getElementById(id).style.display='flex'; }
+    function closeModal(id){ document.getElementById(id).style.display='none'; }
+    function copyShare(){
+      const ta=document.getElementById('shareLinks');
+      ta.select(); navigator.clipboard.writeText(ta.value); alert('Link disalin!');
+    }
+    function buildLinks(){
+      const linkType=document.querySelector('input[name="linkType"]:checked').value;
+      const domain=document.getElementById('domainSelect').value;
+      const links=selectedVideos.map(t=>`${domain}/${linkType}/${t}`);
+      document.getElementById('shareLinks').value=links.join('\n');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Dropdown fix
+      const dropdown = document.getElementById('userDropdown');
+      const userBtn = document.getElementById('userBtn');
+      userBtn.addEventListener('click', (e)=>{ e.stopPropagation(); dropdown.classList.toggle('show'); });
+      document.addEventListener('click', (e)=>{ if(!dropdown.contains(e.target)) dropdown.classList.remove('show'); });
+
+      // Refresh
+      document.getElementById('btnRefresh')?.addEventListener('click', ()=> location.reload());
+
+      const listEl = document.getElementById('videoList');
+      if(!listEl) return;
+
+      const checks = listEl.querySelectorAll('.video-check');
+      const bulkBar = document.getElementById('bulkBar');
+      const countEl = document.getElementById('selectedCount');
+
+      function updateBulk(){
+        const count=[...checks].filter(c=>c.checked).length;
+        bulkBar.classList.toggle('show', count>0);
+        countEl.textContent=`${count} video dipilih`;
+      }
+      checks.forEach(chk=> chk.addEventListener('change', updateBulk));
+
+      // Cancel bulk
+      document.getElementById('bulkCancel').addEventListener('click', ()=>{
+        checks.forEach(c=>c.checked=false); updateBulk();
+      });
+
+      // Bulk share
+      document.getElementById('bulkShare').addEventListener('click', ()=>{
+        const tokens=[...checks].filter(c=>c.checked).map(c=>c.dataset.token);
+        if(!tokens.length) return;
+        selectedVideos=tokens; buildLinks(); openModal('shareModal');
+      });
+
+      // Bulk delete
+      document.getElementById('bulkDelete').addEventListener('click', async ()=>{
+        const ids=[...checks].filter(c=>c.checked).map(c=>c.value);
+        if(!ids.length) return;
+        if(!confirm(`Yakin hapus ${ids.length} video?`)) return;
+        try{
+          const results=await Promise.all(ids.map(id =>
+            fetch(`/api/videos/${id}`, { method:'DELETE', credentials:'include' })
+              .then(r=>r.json().catch(()=>({error:'Invalid JSON'})))
+          ));
+          const failed=results.filter(r=>!r || !r.success);
+          if(failed.length){ alert('Sebagian gagal dihapus.'); }
+          location.reload();
+        }catch(e){
+          console.error(e); alert('Gagal menghapus.');
+        }
+      });
+
+      // Single rename
+      document.querySelectorAll('.action-btn.rename').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          currentVideoId = btn.dataset.id;
+          document.getElementById('renameInput').value = btn.dataset.title || '';
+          openModal('renameModal');
+        });
+      });
+      document.getElementById('saveRename').addEventListener('click', async ()=>{
+        const newName=document.getElementById('renameInput').value.trim();
+        if(!newName) return alert('Judul tidak boleh kosong.');
+        try{
+          const r=await fetch(`/api/videos/${currentVideoId}`, {
+            method:'PUT',
+            headers:{'Content-Type':'application/json'},
+            credentials:'include',
+            body:JSON.stringify({ title:newName })
+          });
+          const data=await r.json();
+          if(data.success){ alert('Berhasil rename!'); location.reload(); }
+          else{ alert(data.error || 'Gagal rename!'); }
+        }catch(e){ console.error(e); alert('Gagal rename!'); }
+        closeModal('renameModal');
+      });
+
+      // Single share
+      document.querySelectorAll('.action-btn.share').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          selectedVideos=[btn.dataset.token]; buildLinks(); openModal('shareModal');
+        });
+      });
+
+      // Single delete
+      document.querySelectorAll('.action-btn.delete').forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+          if(!confirm('Yakin hapus video ini?')) return;
+          try{
+            const r=await fetch(`/api/videos/${btn.dataset.id}`, { method:'DELETE', credentials:'include' });
+            const data=await r.json();
+            if(data.success){ alert('Video dihapus!'); location.reload(); }
+            else{ alert(data.error || 'Gagal hapus video!'); }
+          }catch(e){ console.error(e); alert('Gagal hapus video!'); }
+        });
+      });
+
+      // Pagination
+      const perPageEl = document.getElementById('perPage');
+      const pageInfo = document.getElementById('pageInfo');
+      const nextBtn = document.getElementById('nextPage');
+      const prevBtn = document.getElementById('prevPage');
+      const allItems=[...listEl.children];
+
+      function renderPage(){
+        const start=(currentPage-1)*perPage, end=start+perPage;
+        allItems.forEach((li,i)=> li.style.display=(i>=start && i<end)?'flex':'none');
+        pageInfo.textContent=`Page ${currentPage}`;
+        prevBtn.disabled = currentPage===1;
+        nextBtn.disabled = currentPage*perPage >= allItems.length;
+      }
+      nextBtn.addEventListener('click', ()=>{ if(currentPage*perPage<allItems.length){ currentPage++; renderPage(); }});
+      prevBtn.addEventListener('click', ()=>{ if(currentPage>1){ currentPage--; renderPage(); }});
+      perPageEl.addEventListener('change', ()=>{ perPage=parseInt(perPageEl.value,10); currentPage=1; renderPage(); });
+
+      // Modal share dynamic
+      document.querySelectorAll('input[name="linkType"], #domainSelect').forEach(el=>{
+        el.addEventListener('change', buildLinks);
+      });
+
+      // Init
+      renderPage();
+    });
+  </script>
+

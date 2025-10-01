@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Alenstream — Dashboard</title>
+  <link rel="icon" type="image/png" href="/image/logo.png" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <style>
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f8f9fa; color: #111; }
+    .topbar { background: #fff; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #ddd; }
+    .logo { font-weight: bold; font-size: 1.4em; }
+    .logo .alena { color: #0d6efd; }
+    .logo .stream { color: #333; }
+    .navbar { background: #e9f2ff; display: flex; justify-content: center; padding: 12px 0; gap: 40px; border-bottom: 2px solid #cce0ff; }
+    .nav-item { text-align: center; color: #0d6efd; font-size: 0.95em; text-decoration: none; display: flex; align-items: center; gap: 6px; position: relative; }
+    .nav-item.active { color: #0045a5; font-weight: bold; }
+    .nav-item.active::after { content: ''; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); width: 6px; height: 6px; background: #0045a5; border-radius: 50%; }
+    .container { max-width: 1500px; margin: 30px auto; padding: 0 20px; }
+    h2 { color: #111; font-size: 20px; margin-bottom: 20px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; }
+    .card { padding: 20px; border-radius: 12px; background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 2px 6px rgba(0,0,0,0.05); text-align: center; }
+    .card h3 { margin: 0 0 10px; font-size: 15px; color: #555; }
+    .card .value { font-size: 22px; font-weight: bold; color: #0d6efd; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 15px; }
+    th, td { padding: 10px; border: 1px solid #e5e7eb; }
+    th { background: #f1f5f9; text-align: left; }
+    td { text-align: center; }
+    td.earn { color: #16a34a; font-weight: 500; }
+    @media (min-width: 1024px) { .stats-grid { grid-template-columns: repeat(5, 1fr); } }
+    @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr; } }
+
+    /* Dropdown User */
+    .dropdown { position: relative; display: inline-block; }
+    .dropbtn { background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 15px; color: #333; }
+    .dropbtn i { font-size: 1.2em; color: #555; }
+    .dropdown-content { display: none; position: absolute; right: 0; margin-top: 8px; background: #fff; min-width: 160px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); border-radius: 8px; z-index: 10; }
+    .dropdown-content a { display: block; padding: 10px; color: #333; text-decoration: none; font-size: 14px; }
+    .dropdown-content a:hover { background: #f5f5f5; }
+    .dropdown-content a#btnLogout { color: #dc2626; }
+    .dropdown.show .dropdown-content { display: block; }
+  </style>
+</head>
+<body>
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="logo"><span class="alena">ALENA</span><span class="stream">STREAM</span></div>
+    <div class="user-info">
+  
+      <div class="dropdown">
+        <button class="dropbtn" id="userBtn">
+          <i class="fas fa-user-circle"></i>
+          <span id="username"><%= user?.username %></span>
+
+
+
+          <i class="fas fa-caret-down"></i>
+        </button>
+        <div class="dropdown-content">
+          <a href="/settings"><i class="fas fa-cog"></i> Settings</a>
+          <a href="#" id="btnLogout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVBAR -->
+  <div class="navbar">
+    <a href="/dashboard" class="nav-item active"><i class="fas fa-chart-line"></i> Dashboard</a>
+    <a href="/videos" class="nav-item"><i class="fas fa-video"></i> My Video</a>
+    <a href="/remote" class="nav-item"><i class="fas fa-cloud-upload-alt"></i> Remote Upload</a>
+    <a href="/upload" class="nav-item"><i class="fas fa-upload"></i> Upload Video</a>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="container">
+    <h2>📊 Statistik Akun</h2>
+    <div class="stats-grid">
+      <div class="card"><h3>Views Harian</h3><div class="value"><span id="viewsToday">0</span></div></div>
+      <div class="card"><h3>Earnings Harian</h3><div class="value">$<span id="earningsToday">0.0000</span></div></div>
+      <div class="card"><h3>Saldo Tersedia</h3><div class="value">$<span id="balance">0.0000</span></div></div>
+      <div class="card"><h3>Total Sudah di-WD</h3><div class="value">$<span id="withdrawn">0.0000</span></div></div>
+      <div class="card"><h3>Total Earnings Lifetime</h3><div class="value">$<span id="totalEarnings">0.0000</span></div></div>
+    </div>
+
+    <div class="card" style="margin-top:30px;">
+      <h3>📈 Statistik 7 Hari Terakhir</h3>
+      <canvas id="statsChart" height="120"></canvas>
+    </div>
+
+    <div class="card" style="margin-top:30px;">
+      <h3>📜 Riwayat Harian</h3>
+      <table id="historyTable">
+        <thead>
+          <tr>
+            <th>Tanggal</th>
+            <th>Views</th>
+            <th>Earnings ($)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="3">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Dropdown toggle
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("userBtn").addEventListener("click", () => {
+        document.querySelector(".dropdown").classList.toggle("show");
+      });
+
+      // Logout
+      document.getElementById("btnLogout").addEventListener("click", async (e) => {
+        e.preventDefault();
+        await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+        location.href = "/";
+      });
+    });
+
+    // Load stats & history
+    async function loadStats() {
+      try {
+        const res = await fetch("/api/stats", { credentials: "include" });
+        const data = await res.json();
+
+        document.getElementById("viewsToday").textContent = data.today.viewsToday ?? 0;
+        document.getElementById("earningsToday").textContent = data.today.earningsToday ?? "0.0000";
+        document.getElementById("balance").textContent = data.total.balance ?? "0.0000";
+        document.getElementById("withdrawn").textContent = data.total.withdrawn ?? "0.0000";
+        document.getElementById("totalEarnings").textContent = data.total.lifetime ?? "0.0000";
+
+        const ctx = document.getElementById("statsChart").getContext("2d");
+        new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: data.weekly.map(d => d.date),
+            datasets: [
+              { label: "Views", data: data.weekly.map(d => d.views), borderColor: "#0d6efd", backgroundColor: "rgba(13,110,253,0.1)", tension: 0.3, fill: true },
+              { label: "Earnings ($)", data: data.weekly.map(d => Number(d.earnings).toFixed(4)), borderColor: "#16a34a", backgroundColor: "rgba(22,163,74,0.1)", tension: 0.3, fill: true }
+            ]
+          },
+          options: { responsive: true, plugins: { legend: { position: "top" } }, scales: { y: { beginAtZero: true } } }
+        });
+      } catch (err) { console.error("Gagal load stats:", err); }
+    }
+
+    async function loadHistory() {
+      try {
+        const res = await fetch("/api/stats/history", { credentials: "include" });
+        const data = await res.json();
+        const tbody = document.querySelector("#historyTable tbody");
+        tbody.innerHTML = "";
+
+        if (!data.length) {
+          tbody.innerHTML = `<tr><td colspan="3">Belum ada riwayat</td></tr>`;
+          return;
+        }
+
+        data.forEach(item => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${item.date}</td><td>${item.views}</td><td class="earn">$${Number(item.earnings).toFixed(4)}</td>`;
+          tbody.appendChild(tr);
+        });
+      } catch (err) { console.error("Gagal load history:", err); }
+    }
+
+    loadStats();
+    loadHistory();
+  </script>
+</body>
+</html>

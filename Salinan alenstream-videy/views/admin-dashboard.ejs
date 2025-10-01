@@ -1,0 +1,42 @@
+<div class="page-header">
+  <h2>Selamat datang, <%= user.username %> 👋</h2>
+  <p>Ini adalah panel utama admin. Dari sini kamu bisa mengelola sistem.</p>
+</div>
+
+<div class="card-grid">
+  <div class="card">
+    <h3>Total Users</h3>
+    <p class="big"><%= stats.totalUsers %></p>
+  </div>
+
+  <div class="card">
+    <h3>Total Videos</h3>
+    <p class="big"><%= stats.totalVideos %></p>
+  </div>
+
+  <div class="card">
+    <h3>Withdraw Pending</h3>
+    <p class="big"><%= stats.pendingWithdraws %></p>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Quick Links</h3>
+  <ul class="quick-links">
+    <li>
+      <a href="/admin/withdraws">
+        <i class="fas fa-wallet"></i> Manage Withdraws
+      </a>
+    </li>
+    <li>
+      <a href="/admin/users">
+        <i class="fas fa-users"></i> Manage Users
+      </a>
+    </li>
+    <li>
+      <a href="/admin/videos">
+        <i class="fas fa-video"></i> Manage Videos
+      </a>
+    </li>
+  </ul>
+</div>

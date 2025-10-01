@@ -1,0 +1,67 @@
+<div class="page-header">
+  <h2>Manajemen Users</h2>
+  <p>Admin bisa menghapus user atau menjadikan mereka admin.</p>
+</div>
+
+<div class="card">
+  <h3>Daftar Users</h3>
+  <table class="table users-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Tanggal Daftar</th>
+        <th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (users && users.length > 0) { %>
+        <% users.forEach(u => { %>
+          <tr>
+            <td><%= u.id %></td>
+            <td><%= u.username %></td>
+            <td><%= u.email %></td>
+            <td>
+              <% if (u.role === "admin") { %>
+                <span class="badge badge-admin">Admin</span>
+              <% } else { %>
+                <span class="badge badge-user">User</span>
+              <% } %>
+            </td>
+            <td>
+              <%= new Date(u.created_at + "Z").toLocaleString("id-ID", {
+                timeZone: "Asia/Jakarta",
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+              }) %>
+            </td>
+            <td class="actions">
+              <% if (u.id !== user.id) { %>
+                <form action="/admin/users/<%= u.id %>/delete" method="POST" onsubmit="return confirm('Yakin hapus user <%= u.username %>?');">
+                  <button type="submit" class="btn-danger"><i class="fas fa-trash"></i> Hapus</button>
+                </form>
+
+                <% if (u.role !== "admin") { %>
+                  <form action="/admin/users/<%= u.id %>/make-admin" method="POST" onsubmit="return confirm('Jadikan <%= u.username %> sebagai admin?');">
+                    <button type="submit" class="btn-warning"><i class="fas fa-user-shield"></i> Make Admin</button>
+                  </form>
+                <% } %>
+              <% } else { %>
+                <em class="self-note">Akun sendiri</em>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      <% } else { %>
+        <tr>
+          <td colspan="6" style="text-align:center; color:#888;">Belum ada user</td>
+        </tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>

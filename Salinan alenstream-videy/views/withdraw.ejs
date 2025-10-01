@@ -1,0 +1,88 @@
+
+  <!-- CONTENT -->
+<div class="container">
+<div class="page-header">
+  <h2>Withdraw</h2>
+  <p>Ajukan permintaan withdraw saldo kamu. Minimal $10.</p>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+  <div class="card">
+    <h3>Saldo Tersedia</h3>
+    <p class="big">$<%= earnings.balance.toFixed(2) %></p>
+  </div>
+  <div class="card">
+    <h3>Total Sudah di-WD</h3>
+    <p class="big">$<%= earnings.withdrawn.toFixed(2) %></p>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Request Withdraw</h3>
+  <form action="/withdraw" method="POST" class="withdraw-form">
+    <div class="form-group">
+      <label for="amount">Jumlah ($)</label>
+      <input type="number" step="0.01" min="10" name="amount" id="amount" required placeholder="Contoh: 10.00">
+    </div>
+    <div class="form-group">
+      <label for="method">Metode</label>
+      <select name="method" id="method" required>
+        <option value="">-- Pilih Metode --</option>
+        <option value="usdt">USDT (TRC20)</option>
+        <option value="ltc">Litecoin (LTC)</option>
+      </select>
+    </div>
+    <button type="submit" class="btn-primary">Ajukan Withdraw</button>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Riwayat Withdraw</h3>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Tanggal</th>
+        <th>Jumlah</th>
+        <th>Metode</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (withdraws && withdraws.length > 0) { %>
+        <% withdraws.forEach(w => { %>
+          <tr>
+            <td>
+              <%= new Date(w.created_at + "Z").toLocaleString("id-ID", {
+                timeZone: "Asia/Jakarta",
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+              }) %>
+            </td>
+            <td>$<%= w.amount.toFixed(2) %></td>
+            <td><%= w.method.toUpperCase() %></td>
+            <td>
+              <% if (w.status === "pending") { %>
+                <span class="badge badge-pending">Pending</span>
+              <% } else if (w.status === "approved") { %>
+                <span class="badge badge-success">Approved</span>
+              <% } else if (w.status === "rejected") { %>
+                <span class="badge badge-danger">Rejected</span>
+              <% } else { %>
+                <span class="badge"><%= w.status %></span>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      <% } else { %>
+        <tr>
+          <td colspan="4" style="text-align:center; color:#888;">Belum ada request withdraw</td>
+        </tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+</div>

@@ -1,0 +1,76 @@
+
+
+
+  <div class="container">
+    <div class="card">
+      <h2>📤 Remote Upload (Multi-Link)</h2>
+      <form id="remoteForm">
+        <label>Masukkan Link Video (satu per baris)</label>
+        <textarea id="sourceUrls" placeholder="https://domain/xxx.mp4/m3u8
+https://dood.to/abc
+https://sm.luxsmab.com/id123"></textarea>
+        <button type="submit" class="btn-remote">
+        <i class="fas fa-plus"></i> Tambahkan
+        </button>
+      </form>
+      <ul id="remoteResults"></ul>
+    </div>
+  </div>
+
+
+  <script type="module">
+    const form = document.getElementById("remoteForm");
+    const textarea = document.getElementById("sourceUrls");
+    const results = document.getElementById("remoteResults");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      results.innerHTML = "";
+
+      const urls = textarea.value.split("\n").map(u => u.trim()).filter(Boolean);
+      if (!urls.length) {
+        alert("Masukkan minimal 1 URL.");
+        return;
+      }
+
+      for (const url of urls) {
+        let title = url;
+        try {
+          const u = new URL(url);
+          title = u.hostname + " " + (u.pathname.split("/").pop() || "");
+        } catch {}
+
+        try {
+          const res = await fetch("/api/videos/remote", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ title, sourceUrl: url })
+          });
+          const json = await res.json();
+          if (json.success) {
+            results.innerHTML += `<li class="success">✅ ${url} → Berhasil ditambahkan</li>`;
+          } else {
+            results.innerHTML += `<li class="error">❌ ${url} → ${json.error || "Gagal"}</li>`;
+          }
+        } catch (err) {
+          results.innerHTML += `<li class="error">❌ ${url} → Error server</li>`;
+        }
+      }
+
+      textarea.value = "";
+    });
+
+    // Dropdown toggle
+    document.getElementById("userBtn").addEventListener("click", () => {
+      document.querySelector(".dropdown").classList.toggle("show");
+    });
+
+    // Logout
+    document.getElementById("btnLogout").addEventListener("click", async (e) => {
+      e.preventDefault();
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+      location.href = "/";
+    });
+  </script>
+

@@ -1,0 +1,72 @@
+<div class="page-header">
+  <h2>Manajemen Withdraw</h2>
+  <p>Admin bisa approve / reject withdraw user di sini.</p>
+</div>
+
+<div class="card">
+  <h3>Daftar Withdraw</h3>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Tanggal</th>
+        <th>Jumlah</th>
+        <th>Metode</th>
+        <th>Status</th>
+        <th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (withdraws && withdraws.length > 0) { %>
+        <% withdraws.forEach(w => { %>
+          <tr>
+            <td><%= w.username %></td>
+            <td>
+              <%= new Date(w.created_at + "Z").toLocaleString("id-ID", {
+                timeZone: "Asia/Jakarta",
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+              }) %>
+            </td>
+            <td>$<%= w.amount.toFixed(2) %></td>
+            <td><%= w.method.toUpperCase() %></td>
+            <td>
+              <% if (w.status === "pending") { %>
+                <span class="badge badge-pending">Pending</span>
+              <% } else if (w.status === "approved") { %>
+                <span class="badge badge-success">Approved</span>
+              <% } else if (w.status === "rejected") { %>
+                <span class="badge badge-danger">Rejected</span>
+              <% } else { %>
+                <span class="badge"><%= w.status %></span>
+              <% } %>
+            </td>
+            <td>
+              <form action="/admin/withdraws/<%= w.id %>/status" method="POST" style="display:inline;">
+                <input type="hidden" name="status" value="approved">
+                <button type="submit" class="btn-success">Approve</button>
+              </form>
+              <form action="/admin/withdraws/<%= w.id %>/status" method="POST" style="display:inline;">
+                <input type="hidden" name="status" value="rejected">
+                <button type="submit" class="btn-danger">Reject</button>
+              </form>
+              <% if (w.status !== "pending") { %>
+                <form action="/admin/withdraws/<%= w.id %>/status" method="POST" style="display:inline;">
+                  <input type="hidden" name="status" value="pending">
+                  <button type="submit" class="btn-warning">Set Pending</button>
+                </form>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      <% } else { %>
+        <tr>
+          <td colspan="6" style="text-align:center; color:#888;">Belum ada request withdraw</td>
+        </tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>

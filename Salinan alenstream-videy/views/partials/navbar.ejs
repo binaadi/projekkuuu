@@ -1,0 +1,75 @@
+<!-- LAYOUT -->
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="logo">
+      <span class="alena">ALENA</span><span class="stream">STREAM</span>
+    </div>
+
+    <!-- Menu utama -->
+    <nav class="menu">
+      <a href="/dashboard" class="nav-item <%= activePage==='dashboard' ? 'active' : '' %>">
+        <i class="fas fa-chart-line"></i> Dashboard
+      </a>
+      <a href="/videos" class="nav-item <%= activePage==='videos' ? 'active' : '' %>">
+        <i class="fas fa-video"></i> My Video
+      </a>
+      <a href="/remot" class="nav-item <%= activePage==='remot' ? 'active' : '' %>">
+        <i class="fas fa-cloud-upload-alt"></i> Remote Upload
+      </a>
+      <a href="/upload" class="nav-item <%= activePage==='upload' ? 'active' : '' %>">
+        <i class="fas fa-upload"></i> Upload Video
+      </a>
+      <a href="/withdraw" class="nav-item <%= activePage==='withdraw' ? 'active' : '' %>">
+        <i class="fas fa-wallet"></i> Withdraw
+      </a>
+    </nav>
+
+    <!-- Section bawah -->
+    <div class="sidebar-footer">
+      <h4 class="sidebar-title">LAINNYA</h4>
+      <a href="/settings" class="nav-item"><i class="fas fa-cog"></i> Settings</a>
+      <a href="/docs" class="nav-item"><i class="fas fa-book"></i> Documentation</a>
+      <a href="/support" class="nav-item"><i class="fas fa-life-ring"></i> Support</a>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <button class="hamburger" id="hamburgerBtn">
+        <i class="fas fa-bars"></i>
+      </button>
+      <h2 class="page-title"><%= title %></h2>
+      <div class="user-info">
+        <div class="dropdown">
+          <button class="profile-btn" id="userBtn">
+            <div class="avatar-initial"><%= user?.username?.charAt(0).toUpperCase() %></div>
+            <span class="username"><%= user?.username %></span>
+            <i class="fas fa-caret-down"></i>
+          </button>
+          <div class="dropdown-content" id="userDropdown">
+            <a href="#" id="btnLogout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+      <%- body %>
+    </div>
+  </div>
+</div>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const sidebar = document.querySelector(".sidebar");
+    const btn = document.getElementById("hamburgerBtn");
+
+    btn?.addEventListener("click", () => {
+      sidebar.classList.toggle("open");
+    });
+  });
+</script>
+

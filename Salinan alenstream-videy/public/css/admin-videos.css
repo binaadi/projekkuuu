@@ -1,0 +1,47 @@
+/* Styling tabel video */
+.videos-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.videos-table th,
+.videos-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+
+.videos-table th {
+  background: #f4f6f8;
+  font-weight: 600;
+}
+
+.videos-table tr:hover {
+  background: #fafafa;
+}
+
+/* Button delete */
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-danger {
+  background: #dc3545;
+  border: none;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-danger:hover {
+  background: #c82333;
+}
+
+code {
+  background: #f8f9fa;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 0.85em;
+}

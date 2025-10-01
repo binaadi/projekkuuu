@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Alenstream — Login</title>
+  <!-- <link rel="stylesheet" href="/css/style.css"/> -->
+  <style>
+    body {
+      margin: 0; font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #e9f2ff, #f8f9fa);
+      color: #111;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      height: 100vh;
+    }
+    header h1 { 
+      font-size: 1.8em; margin-bottom: 20px; 
+    }
+    .logo .alena { color: #0d6efd; font-weight: bold; }
+    .logo .stream { color: #111; font-weight: bold; }
+    .card {
+      background: #fff; padding: 30px 25px;
+      border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      width: 100%; max-width: 380px;
+      animation: fadeIn 0.6s ease-in-out;
+    }
+    h2 { text-align: center; margin-bottom: 20px; color: #333; }
+    input {
+      width: 100%; padding: 12px; margin: 10px 0;
+      border: 1px solid #ccc; border-radius: 8px;
+      font-size: 15px; transition: border-color 0.2s;
+    }
+    input:focus { outline: none; border-color: #0d6efd; }
+    button {
+      width: 100%; padding: 12px;
+      background: #0d6efd; color: #fff;
+      border: none; border-radius: 8px;
+      font-size: 16px; font-weight: 600;
+      cursor: pointer; margin-top: 8px;
+      transition: all 0.2s ease;
+    }
+    button:hover { background: #0045a5; box-shadow: 0 3px 8px rgba(13,110,253,0.3); }
+    .link {
+      text-align: center; margin-top: 14px; font-size: 14px;
+    }
+    .link a { color: #0d6efd; text-decoration: none; font-weight: 500; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Logo -->
+  <header>
+    <h1 class="logo"><span class="alena">ALENA</span><span class="stream">STREAM</span></h1>
+  </header>
+
+  <!-- Card Login -->
+  <div class="card">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <input type="text" id="loginUsername" placeholder="Username" required/>
+      <input type="password" id="loginPassword" placeholder="Password" required minlength="6"/>
+      <button type="submit">Masuk</button>
+    </form>
+    <div class="link">
+      Belum punya akun? <a href="register.html">Daftar di sini</a>
+    </div>
+  </div>
+
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

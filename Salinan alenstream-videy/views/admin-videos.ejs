@@ -1,0 +1,55 @@
+<div class="page-header">
+  <h2>Manajemen Videos</h2>
+  <p>Admin bisa melihat dan menghapus video user di sini.</p>
+</div>
+
+<div class="card">
+  <h3>Daftar Videos</h3>
+  <table class="table videos-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>User</th>
+        <th>Judul</th>
+        <th>Source</th>
+        <th>Token</th>
+        <th>Views</th>
+        <th>Tanggal Upload</th>
+        <th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (videos && videos.length > 0) { %>
+        <% videos.forEach(v => { %>
+          <tr>
+            <td><%= v.id %></td>
+            <td><%= v.username %></td>
+            <td><%= v.title %></td>
+            <td><%= v.source %></td>
+            <td><code><%= v.embed_token %></code></td>
+            <td><%= v.views %></td>
+            <td>
+              <%= new Date(v.created_at + "Z").toLocaleString("id-ID", {
+                timeZone: "Asia/Jakarta",
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+              }) %>
+            </td>
+            <td class="actions">
+              <form action="/admin/videos/<%= v.id %>/delete" method="POST" onsubmit="return confirm('Yakin hapus video <%= v.title %>?');">
+                <button type="submit" class="btn-danger"><i class="fas fa-trash"></i> Hapus</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      <% } else { %>
+        <tr>
+          <td colspan="8" style="text-align:center; color:#888;">Belum ada video</td>
+        </tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>

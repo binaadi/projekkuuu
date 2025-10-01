@@ -1,0 +1,132 @@
+
+
+<div class="container">
+  <div class="stats-grid">
+    <div class="card">
+      <h3>Views Harian</h3>
+      <div class="value">
+        <i class="fas fa-eye"></i>
+        <span id="viewsToday">0</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Earnings Harian</h3>
+      <div class="value">
+        <i class="fas fa-calendar-check"></i>
+        <span>$<span id="earningsToday">0.0000</span></span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Saldo Tersedia</h3>
+      <div class="value">
+        <i class="fas fa-wallet"></i>
+        <span>$<span id="balance">0.0000</span></span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Total Sudah di-WD</h3>
+      <div class="value">
+        <i class="fas fa-money-bill-wave"></i>
+        <span>$<span id="withdrawn">0.0000</span></span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Total Earnings Lifetime</h3>
+      <div class="value">
+        <i class="fas fa-chart-line"></i>
+        <span>$<span id="totalEarnings">0.0000</span></span>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="card" style="margin-top:30px;">
+    <h3>📈 Statistik 7 Hari Terakhir</h3>
+    <canvas id="statsChart" height="120"></canvas>
+  </div>
+
+  <div class="card" style="margin-top:30px;">
+    <h3>📜 Riwayat Harian</h3>
+    <table id="historyTable">
+      <thead>
+        <tr>
+          <th>Tanggal</th>
+          <th>Views</th>
+          <th>Earnings ($)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="3">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Dropdown toggle
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("userBtn").addEventListener("click", () => {
+        document.querySelector(".dropdown").classList.toggle("show");
+      });
+
+      // Logout
+      document.getElementById("btnLogout").addEventListener("click", async (e) => {
+        e.preventDefault();
+        await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+        location.href = "/";
+      });
+    });
+
+    // Load stats & history
+    async function loadStats() {
+      try {
+        const res = await fetch("/api/stats", { credentials: "include" });
+        const data = await res.json();
+
+        document.getElementById("viewsToday").textContent = data.today.viewsToday ?? 0;
+        document.getElementById("earningsToday").textContent = data.today.earningsToday ?? "0.0000";
+        document.getElementById("balance").textContent = data.total.balance ?? "0.0000";
+        document.getElementById("withdrawn").textContent = data.total.withdrawn ?? "0.0000";
+        document.getElementById("totalEarnings").textContent = data.total.lifetime ?? "0.0000";
+
+        const ctx = document.getElementById("statsChart").getContext("2d");
+        new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: data.weekly.map(d => d.date),
+            datasets: [
+              { label: "Views", data: data.weekly.map(d => d.views), borderColor: "#0d6efd", backgroundColor: "rgba(13,110,253,0.1)", tension: 0.3, fill: true },
+              { label: "Earnings ($)", data: data.weekly.map(d => Number(d.earnings).toFixed(4)), borderColor: "#16a34a", backgroundColor: "rgba(22,163,74,0.1)", tension: 0.3, fill: true }
+            ]
+          },
+          options: { responsive: true, plugins: { legend: { position: "top" } }, scales: { y: { beginAtZero: true } } }
+        });
+      } catch (err) { console.error("Gagal load stats:", err); }
+    }
+
+    async function loadHistory() {
+      try {
+        const res = await fetch("/api/stats/history", { credentials: "include" });
+        const data = await res.json();
+        const tbody = document.querySelector("#historyTable tbody");
+        tbody.innerHTML = "";
+
+        if (!data.length) {
+          tbody.innerHTML = `<tr><td colspan="3">Belum ada riwayat</td></tr>`;
+          return;
+        }
+
+        data.forEach(item => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${item.date}</td><td>${item.views}</td><td class="earn">$${Number(item.earnings).toFixed(4)}</td>`;
+          tbody.appendChild(tr);
+        });
+      } catch (err) { console.error("Gagal load history:", err); }
+    }
+
+    loadStats();
+    loadHistory();
+  </script>

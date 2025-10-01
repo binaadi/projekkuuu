@@ -1,0 +1,125 @@
+/* ========== GLOBAL ========== */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f4f6f9;
+  color: #333;
+}
+
+/* ========== LAYOUT ========== */
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ========== SIDEBAR ========== */
+.admin-sidebar {
+  width: 240px;
+  background: #1f2937; /* abu gelap */
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 0;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.admin-sidebar .logo {
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.admin-sidebar .logo .alena {
+  color: #3b82f6; /* biru */
+}
+
+.admin-sidebar .logo .stream {
+  color: #fff;
+}
+
+.admin-sidebar .menu {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-sidebar .menu a {
+  color: #cbd5e1;
+  text-decoration: none;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95em;
+  transition: all 0.2s ease;
+}
+
+.admin-sidebar .menu a:hover {
+  background: #374151;
+  color: #fff;
+}
+
+.admin-sidebar .menu a.active {
+  background: #2563eb; /* biru terang */
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ========== MAIN ========== */
+.admin-main {
+  margin-left: 240px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ========== TOPBAR ========== */
+.admin-topbar {
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 15px 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 1.2em;
+  font-weight: 600;
+  color: #111827;
+}
+
+.admin-user-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.admin-user-info .username {
+  font-size: 0.95em;
+  color: #374151;
+}
+
+.btn-logout {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.85em;
+  transition: background 0.2s ease;
+}
+
+.btn-logout:hover {
+  background: #dc2626;
+}
+
+/* ========== CONTENT ========== */
+.admin-content {
+  padding: 20px 25px;
+}

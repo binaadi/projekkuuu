@@ -1,0 +1,92 @@
+/* .nav-item { text-align: center; color: #0d6efd; font-size: 0.95em; text-decoration: none; display: flex; align-items: center; gap: 6px; position: relative; }
+    .nav-item.active { color: #0045a5; font-weight: bold; }
+    .nav-item.active::after { content: ''; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); width: 6px; height: 6px; background: #0045a5; border-radius: 50%; }
+     */
+/* .container { max-width: 1500px; margin: 30px auto; padding: 0 20px; } */
+    h2 { color: #111; font-size: 20px; margin-bottom: 20px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; }
+    .card { padding: 20px; border-radius: 12px; background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.124); text-align: center; }
+    .card h3 { margin: 0 0 10px; font-size: 15px; color: #555; }
+    .card .value { font-size: 22px; font-weight: bold; color: #0d6dfd; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 15px; }
+    th, td { padding: 10px; border: 1px solid #e5e7eb; }
+    th { background: #f1f5f9; text-align: left; }
+    td { text-align: center; }
+    td.earn { color: #16a34a; font-weight: 500; }
+    @media (min-width: 1024px) { .stats-grid { grid-template-columns: repeat(5, 1fr); } }
+    @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr; } }
+
+
+    .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 10px;
+}
+
+.card {
+  padding: 20px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  text-align: center;
+}
+
+.card h3 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  color: #0095ff;
+}
+
+.card .value {
+  font-size: 22px;
+  font-weight: normal;
+  color: #002d70;
+  display: flex;
+  flex-direction: row;   /* <-- horizontal */
+  align-items: center;
+  justify-content: center;
+  gap: 10px;             /* jarak icon & angka */
+}
+
+.card .value i {
+  font-size: 24px;
+  color: #0ea5e9;
+}
+
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin-top: 15px;
+}
+
+th, td {
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+}
+
+th {
+  background: #f1f5f9;
+  text-align: left;
+}
+
+td {
+  text-align: center;
+}
+
+td.earn {
+  color: #16a34a;
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (min-width: 1024px) {
+  .stats-grid { grid-template-columns: repeat(5, 1fr); }
+}
+@media (max-width: 600px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .card .value i { font-size: 24px; }
+  .card .value { font-size: 20px; }
+}

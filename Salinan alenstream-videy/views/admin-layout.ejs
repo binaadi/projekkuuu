@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title><%= title %> — Admin Panel</title>
+  <link rel="stylesheet" href="/css/admin.css"/>
+  <% if (activePage === "admin-dashboard") { %>
+    <link rel="stylesheet" href="/css/admin-dashboard.css"/>
+  <% } else if (activePage === "admin-withdraws") { %>
+    <link rel="stylesheet" href="/css/admin-withdraws.css"/>
+  <% } else if (activePage === "admin-users") { %>
+    <link rel="stylesheet" href="/css/admin-users.css"/>
+  <% } else if (activePage === "admin-videos") { %>
+    <link rel="stylesheet" href="/css/admin-videos.css"/>
+  <% } %>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar">
+      <div class="logo">
+        <span class="alena">ALENA</span><span class="stream">ADMIN</span>
+      </div>
+      <nav class="menu">
+        <a href="/admin/dashboard" class="<%= activePage==='admin-dashboard' ? 'active' : '' %>">
+            <i class="fas fa-home"></i> Dashboard
+        </a>
+
+        <a href="/admin/withdraws" class="<%= activePage==='admin-withdraws' ? 'active' : '' %>">
+          <i class="fas fa-wallet"></i> Withdraws
+        </a>
+        <a href="/admin/users" class="<%= activePage==='admin-users' ? 'active' : '' %>">
+          <i class="fas fa-users"></i> Users
+        </a>
+        <a href="/admin/videos" class="<%= activePage==='admin-videos' ? 'active' : '' %>">
+          <i class="fas fa-video"></i> Videos
+        </a>
+      </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="admin-main">
+      <!-- TOPBAR -->
+      <header class="admin-topbar">
+        <h1 class="page-title"><%= title %></h1>
+        <div class="admin-user-info">
+            <span class="username">
+            <i class="fas fa-user-shield"></i> <%= user?.username || "Admin" %>
+            </span>
+
+            <form action="/admin/logout" method="POST" onsubmit="return confirm('Yakin mau logout admin?');" style="display:inline;">
+            <button type="submit" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </form>
+
+        </div>
+      </header>
+
+      <!-- CONTENT -->
+      <section class="admin-content">
+        <%- body %>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

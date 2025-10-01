@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Alenstream — Upload ke Videy</title>
+  <link rel="icon" type="image/png" href="/image/logo.png" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <style>
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f8f9fa; color: #111; }
+    .topbar { background: #fff; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #ddd; }
+    .logo { font-weight: bold; font-size: 1.4em; }
+    .logo .alena { color: #0d6efd; }
+    .logo .stream { color: #333; }
+    .navbar { background: #e9f2ff; display: flex; justify-content: center; padding: 12px 0; gap: 40px; border-bottom: 2px solid #cce0ff; }
+    .nav-item { text-align: center; color: #0d6efd; font-size: 0.95em; text-decoration: none; display: flex; align-items: center; gap: 6px; position: relative; }
+    .nav-item.active { color: #0045a5; font-weight: bold; }
+    .nav-item.active::after { content: ''; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); width: 6px; height: 6px; background: #0045a5; border-radius: 50%; }
+    .container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+    h2 { color: #111; font-size: 20px; margin-bottom: 20px; text-align: center; }
+    .card { padding: 20px; border-radius: 12px; background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 2px 6px rgba(0,0,0,0.05); text-align: center; }
+    input[type="file"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; }
+    button { padding: 10px 16px; border: none; border-radius: 8px; background: #0d6efd; color: #fff; font-size: 14px; cursor: pointer; margin-top: 15px; transition: background 0.2s; }
+    button:hover { background: #0045a5; }
+    #progressBar { width: 100%; height: 20px; margin-top: 15px; border-radius: 8px; overflow: hidden; background: #e5e7eb; }
+    #progressFill { height: 100%; width: 0%; background: #0d6efd; transition: width 0.2s; }
+    #uploadMsg { font-size: 13px; margin-top: 8px; color: #555; }
+
+    /* Dropdown User */
+    .dropdown { position: relative; display: inline-block; }
+    .dropbtn { background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 15px; color: #333; }
+    .dropbtn i { font-size: 1.2em; color: #555; }
+    .dropdown-content { display: none; position: absolute; right: 0; margin-top: 8px; background: #fff; min-width: 160px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); border-radius: 8px; z-index: 10; }
+    .dropdown-content a { display: block; padding: 10px; color: #333; text-decoration: none; font-size: 14px; }
+    .dropdown-content a:hover { background: #f5f5f5; }
+    .dropdown-content a#btnLogout { color: #dc2626; }
+    .dropdown.show .dropdown-content { display: block; }
+  </style>
+</head>
+<body>
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="logo"><span class="alena">ALENA</span><span class="stream">STREAM</span></div>
+    <div class="user-info">
+      <div class="dropdown">
+        <button class="dropbtn" id="userBtn">
+          <i class="fas fa-user-circle"></i>
+          <span id="username"><%= user?.username %></span>
+          <i class="fas fa-caret-down"></i>
+        </button>
+        <div class="dropdown-content">
+          <a href="/settings"><i class="fas fa-cog"></i> Settings</a>
+          <a href="#" id="btnLogout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVBAR -->
+  <div class="navbar">
+    <a href="/dashboard" class="nav-item"><i class="fas fa-chart-line"></i> Dashboard</a>
+    <a href="/videos" class="nav-item"><i class="fas fa-video"></i> My Video</a>
+    <a href="/remote" class="nav-item"><i class="fas fa-cloud-upload-alt"></i> Remote Upload</a>
+    <a href="/upload" class="nav-item active"><i class="fas fa-upload"></i> Upload Video</a>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="container">
+    <div class="card">
+      <h2>📤 Upload Video → Videy</h2>
+      <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="file" name="file" accept="video/*" required/>
+        <button type="submit"><i class="fas fa-upload"></i> Upload</button>
+      </form>
+      <div id="progressBar"><div id="progressFill"></div></div>
+      <div id="uploadMsg"></div>
+    </div>
+  </div>
+
+  <!-- Script Upload + Dropdown -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // Toggle dropdown
+      document.getElementById("userBtn").addEventListener("click", () => {
+        document.querySelector(".dropdown").classList.toggle("show");
+      });
+
+      // Upload logic
+      const form = document.getElementById("uploadForm");
+      const progressFill = document.getElementById("progressFill");
+      const msg = document.getElementById("uploadMsg");
+      const fileInput = document.getElementById("file");
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        let visitorId = localStorage.getItem("visitorId");
+        if (!visitorId) {
+          visitorId = crypto.randomUUID();
+          localStorage.setItem("visitorId", visitorId);
+        }
+
+        const fd = new FormData();
+        fd.append("file", file);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", `https://videy.co/api/upload?visitorId=${encodeURIComponent(visitorId)}`, true);
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            progressFill.style.width = percent + "%";
+          }
+        };
+
+        xhr.onload = async () => {
+          if (xhr.status === 200) {
+            try {
+              const result = JSON.parse(xhr.responseText);
+              const link = result?.link || "";
+              const u = new URL(link);
+              const videoId = u.searchParams.get("id") || link.split("/").pop();
+
+              msg.textContent = "Upload selesai 🎉 menyimpan metadata...";
+
+              await fetch("/api/videos", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  title: file.name.replace(/\.[^/.]+$/, ""),
+                  source: "videy",
+                  video_id: videoId,
+                }),
+                credentials: "include",
+              });
+
+              msg.textContent = "Sukses ✅, mengarahkan ke daftar video...";
+              setTimeout(() => (location.href = "/videos"), 1200);
+            } catch {
+              msg.textContent = "Upload ke Videy gagal parsing.";
+            }
+          } else {
+            msg.textContent = "Upload gagal ke Videy ❌";
+          }
+        };
+
+        xhr.onerror = () => {
+          msg.textContent = "Network error saat upload ❌";
+        };
+
+        xhr.send(fd);
+      });
+    });
+  </script>
+</body>
+</html>

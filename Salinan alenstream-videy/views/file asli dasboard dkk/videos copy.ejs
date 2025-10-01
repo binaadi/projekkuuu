@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Alenstream — My Videos</title>
+  <link rel="icon" type="image/png" href="/image/logo.png" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <style>
+    body { margin:0; font-family:'Segoe UI',sans-serif; background:#f8f9fa; color:#111; }
+    .topbar { background:#fff; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #ddd; }
+    .logo { font-weight:bold; font-size:1.4em; }
+    .logo .alena { color:#0d6efd; } .logo .stream { color:#333; }
+
+    .navbar { background:#e9f2ff; display:flex; justify-content:center; padding:12px 0; gap:40px; border-bottom:2px solid #cce0ff; }
+    .nav-item { color:#0d6efd; font-size:.95em; text-decoration:none; display:flex; align-items:center; gap:6px; position:relative; }
+    .nav-item.active { color:#0045a5; font-weight:700; }
+    .nav-item.active::after { content:''; position:absolute; bottom:-6px; left:50%; transform:translateX(-50%); width:6px; height:6px; background:#0045a5; border-radius:50%; }
+
+    .container { max-width:1200px; margin:30px auto; padding:0 20px; }
+    .card { padding:20px; border-radius:12px; background:#fff; border:1px solid #e5e7eb; box-shadow:0 2px 6px rgba(0,0,0,.05); }
+    .card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; }
+    .refresh-btn { background:#e9f2ff; border:1px solid #0d6efd; color:#0d6efd; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:14px; }
+    .refresh-btn:hover { background:#d0e4ff; }
+
+    .video-list { list-style:none; padding:0; margin:0; }
+    .video-item { padding:12px; margin-bottom:10px; border:1px solid #eee; border-radius:8px; background:#fff; display:flex; justify-content:space-between; align-items:center; transition:.2s; }
+    .video-item:hover { box-shadow:0 2px 6px rgba(0,0,0,.05); }
+    .video-left { display:flex; align-items:center; gap:10px; }
+    .video-left input[type="checkbox"] { transform:scale(1.2); cursor:pointer; }
+    .video-left i { font-size:20px; color:#0d6efd; }
+    .video-left strong { font-size:15px; color:#0d6efd; display:block; }
+    .video-left small { color:#666; font-size:12px; display:block; }
+
+    /* === ACTION ICONS === */
+    .actions { display:flex; align-items:center; gap:8px; }
+    .actions a { display:flex; align-items:center; gap:6px; font-size:14px; padding:6px 12px; border-radius:6px; border:1px solid #cce0ff; background:#e9f2ff; color:#0d6efd; font-weight:600; transition:.2s; text-decoration:none; }
+    .actions a:hover { background:#d0e4ff; }
+
+    .action-btn { display:flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:6px; border:1px solid #eee; background:#f9fafb; cursor:pointer; transition:.2s; }
+    .action-btn:hover { background:#f1f5f9; }
+    .action-btn i { font-size:15px; }
+    .action-btn.rename { color:#2563eb; }
+    .action-btn.share { color:#16a34a; }
+    .action-btn.delete { color:#dc2626; }
+
+    /* Bulk floating box */
+    .bulk-bar { 
+      display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+      background:#fff; border:1px solid #cce0ff; box-shadow:0 4px 12px rgba(0,0,0,.15);
+      border-radius:12px; padding:12px 20px; z-index:200; gap:12px; align-items:center;
+    }
+    .bulk-bar.show { display:flex; }
+    .bulk-bar span { font-size:14px; color:#333; }
+    .bulk-bar button { padding:6px 12px; border:none; border-radius:6px; cursor:pointer; font-size:14px; }
+    #bulkShare { background:#16a34a; color:#fff; }
+    #bulkDelete { background:#dc2626; color:#fff; }
+    #bulkCancel { background:#f1f5f9; }
+
+    /* Pagination */
+    /* Pagination */
+    .pager { display: flex; justify-content: center; align-items: center; gap: 25px; margin-top: 20px; font-size: 14px; }
+    .pager-group { display: flex; align-items: center; gap: 10px; }
+    .pager button { padding: 6px 14px; border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; font-size: 14px; transition: 0.2s; }
+    .pager button:hover:not(:disabled) { background: #f1f5f9; }
+    .pager button:disabled { opacity: .5; cursor: not-allowed; }
+    .pager span { font-weight: 500; color: #333; }
+    .pager select { padding: 6px 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; }
+
+
+    /* === RENAME MODAL FIX === */
+    #renameModal .modal-content { text-align:center; padding:25px; }
+    #renameModal h3 { margin-bottom:20px; font-size:18px; font-weight:600; color:#0d6efd; }
+    #renameModal input { width:100%; padding:10px 12px; border:1px solid #ccc; border-radius:8px; font-size:14px; margin-top:5px; margin-bottom:20px; box-sizing:border-box; }
+    #renameModal .modal-actions { display:flex; justify-content:flex-end; gap:10px; }
+    #renameModal .btn-cancel { background:#f1f5f9; color:#333; border:none; padding:8px 16px; border-radius:8px; cursor:pointer; }
+    #renameModal .btn-save { background:#0d6efd; color:#fff; border:none; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600; transition:.2s; }
+    #renameModal .btn-save:hover { background:#0056d6; }
+
+
+
+
+    /* Dropdown */
+    .dropdown { position:relative; display:inline-block; }
+    .dropbtn { background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 15px; color: #333; }
+    .dropbtn i { font-size: 1.2em; color: #555; }
+    .dropdown-content { display:none; position:absolute; right:0; margin-top:8px; background:#fff; min-width:160px; box-shadow:0 2px 6px rgba(0,0,0,.15); border-radius:8px; z-index:10; }
+    .dropdown-content a { display:block; padding:10px; color:#333; text-decoration:none; font-size:14px; }
+    .dropdown-content a:hover { background:#f5f5f5; }
+    .dropdown-content a#btnLogout { color:#dc2626; }
+    .dropdown.show .dropdown-content { display:block; }
+
+    /* Modal */
+    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); justify-content:center; align-items:center; z-index:999; }
+    .modal-content { background:#fff; padding:20px; border-radius:12px; width:90%; max-width:500px; box-shadow:0 4px 12px rgba(0,0,0,.2); animation:pop .2s ease; }
+    .modal-content h3 { margin-bottom:15px; font-size:18px; font-weight:600; color:#0d6efd; text-align:center; }
+    .form-group { margin-bottom:15px; }
+    .form-group label { display:block; margin-bottom:6px; font-size:14px; font-weight:500; color:#333; }
+    .radio-group { display:flex; gap:20px; align-items:center; }
+    .radio-group label { display:flex; align-items:center; gap:6px; font-size:14px; cursor:pointer; }
+    select, textarea { width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; font-size:14px; }
+    textarea { min-height:100px; resize:vertical; }
+    .modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:15px; }
+    .btn-cancel, .btn-save { border:none; padding:8px 16px; border-radius:8px; font-size:14px; cursor:pointer; }
+    .btn-cancel { background:#f1f5f9; color:#333; }
+    .btn-save { background:#0d6efd; color:#fff; font-weight:600; }
+    @keyframes pop { from{transform:scale(.96);opacity:0} to{transform:scale(1);opacity:1} }
+  </style>
+</head>
+<body>
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="logo"><span class="alena">ALENA</span><span class="stream">STREAM</span></div>
+    <div class="user-info">
+      <div class="dropdown" id="userDropdown">
+        <button class="dropbtn" id="userBtn" type="button">
+          <i class="fas fa-user-circle"></i>
+          <span id="username"><%= (user && user.username) || 'User' %></span>
+          <i class="fas fa-caret-down"></i>
+        </button>
+        <div class="dropdown-content">
+          <a href="/settings"><i class="fas fa-cog"></i> Settings</a>
+          <a href="#" id="btnLogout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVBAR -->
+  <div class="navbar">
+    <a href="/dashboard" class="nav-item"><i class="fas fa-chart-line"></i> Dashboard</a>
+    <a href="/videos" class="nav-item active"><i class="fas fa-video"></i> My Video</a>
+    <a href="/remote" class="nav-item"><i class="fas fa-cloud-upload-alt"></i> Remote Upload</a>
+    <a href="/upload" class="nav-item"><i class="fas fa-upload"></i> Upload Video</a>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="container">
+    <div class="card">
+      <div class="card-header">
+        <h2>🎥 Daftar Video</h2>
+        <button id="btnRefresh" class="refresh-btn" type="button"><i class="fas fa-sync-alt"></i> Refresh</button>
+      </div>
+
+      <% if (videos && videos.length > 0) { %>
+      <ul class="video-list" id="videoList">
+        <% videos.forEach(v => { %>
+        <li class="video-item">
+          <div class="video-left">
+            <input type="checkbox" class="video-check" value="<%= v.id %>" data-token="<%= v.embed_token %>"/>
+            <i class="fas fa-video"></i>
+            <div>
+              <strong><%= v.title %></strong>
+              <small>Dibuat: <%= v.created_at %></small>
+            </div>
+          </div>
+          <div class="actions">
+            <a href="/e/<%= v.embed_token %>" target="_blank"><i class="fas fa-play"></i> Tonton</a>
+            <button class="action-btn rename" type="button" data-id="<%= v.id %>" data-title="<%= v.title %>"><i class="fas fa-edit"></i></button>
+            <button class="action-btn share" type="button" data-token="<%= v.embed_token %>"><i class="fas fa-share-alt"></i></button>
+            <button class="action-btn delete" type="button" data-id="<%= v.id %>"><i class="fas fa-trash"></i></button>
+          </div>
+        </li>
+        <% }) %>
+      </ul>
+
+      <div class="pager">
+  <div class="pager-group">
+    <button id="prevPage" type="button">← Prev</button>
+    <span id="pageInfo">Page 1</span>
+    <button id="nextPage" type="button">Next →</button>
+  </div>
+  <div class="pager-group">
+    <label for="perPage">Tampil:</label>
+    <select id="perPage">
+      <option value="10" selected>10</option>
+      <option value="20">20</option>
+      <option value="50">50</option>
+    </select>
+  </div>
+</div>
+
+
+      <% } else { %>
+        <p>Tidak ada video yang diupload.</p>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- BULK BOX -->
+  <div class="bulk-bar" id="bulkBar">
+    <span id="selectedCount">0 video dipilih</span>
+    <button id="bulkShare" type="button"><i class="fas fa-share-alt"></i> Share</button>
+    <button id="bulkDelete" type="button"><i class="fas fa-trash"></i> Hapus</button>
+    <button id="bulkCancel" type="button"><i class="fas fa-times"></i> Cancel</button>
+  </div>
+
+  <!-- SHARE MODAL -->
+  <div class="modal" id="shareModal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <h3>🔗 Share Video</h3>
+      <div class="form-group">
+        <label>Jenis Link:</label>
+        <div class="radio-group">
+          <label><input type="radio" name="linkType" value="e" checked> Embed (/e/)</label>
+          <label><input type="radio" name="linkType" value="v"> Streaming (/v/)</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="domainSelect">Domain:</label>
+        <select id="domainSelect">
+          <option value="https://alenstream.site">alenstream.site</option>
+          <option value="https://cdn.alenastream.net">cdn.alenastream.net</option>
+          <option value="https://video.alena.id">video.alena.id</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Link Hasil:</label>
+        <textarea id="shareLinks" readonly></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" type="button" onclick="closeModal('shareModal')">Tutup</button>
+        <button class="btn-save" type="button" onclick="copyShare()">Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RENAME MODAL -->
+  <!-- RENAME MODAL -->
+  <div class="modal" id="renameModal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <h3>✏️ Rename Video</h3>
+      <input type="text" id="renameInput" placeholder="Masukkan judul baru">
+      <div class="modal-actions">
+        <button class="btn-cancel" type="button" onclick="closeModal('renameModal')">Batal</button>
+        <button class="btn-save" type="button" id="saveRename">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+
+
+  <script>
+    let selectedVideos = [];
+    let currentVideoId = null;
+    let currentPage = 1;
+    let perPage = 10;
+
+    function openModal(id){ document.getElementById(id).style.display='flex'; }
+    function closeModal(id){ document.getElementById(id).style.display='none'; }
+    function copyShare(){
+      const ta=document.getElementById('shareLinks');
+      ta.select(); navigator.clipboard.writeText(ta.value); alert('Link disalin!');
+    }
+    function buildLinks(){
+      const linkType=document.querySelector('input[name="linkType"]:checked').value;
+      const domain=document.getElementById('domainSelect').value;
+      const links=selectedVideos.map(t=>`${domain}/${linkType}/${t}`);
+      document.getElementById('shareLinks').value=links.join('\n');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Dropdown fix
+      const dropdown = document.getElementById('userDropdown');
+      const userBtn = document.getElementById('userBtn');
+      userBtn.addEventListener('click', (e)=>{ e.stopPropagation(); dropdown.classList.toggle('show'); });
+      document.addEventListener('click', (e)=>{ if(!dropdown.contains(e.target)) dropdown.classList.remove('show'); });
+
+      // Refresh
+      document.getElementById('btnRefresh')?.addEventListener('click', ()=> location.reload());
+
+      const listEl = document.getElementById('videoList');
+      if(!listEl) return;
+
+      const checks = listEl.querySelectorAll('.video-check');
+      const bulkBar = document.getElementById('bulkBar');
+      const countEl = document.getElementById('selectedCount');
+
+      function updateBulk(){
+        const count=[...checks].filter(c=>c.checked).length;
+        bulkBar.classList.toggle('show', count>0);
+        countEl.textContent=`${count} video dipilih`;
+      }
+      checks.forEach(chk=> chk.addEventListener('change', updateBulk));
+
+      // Cancel bulk
+      document.getElementById('bulkCancel').addEventListener('click', ()=>{
+        checks.forEach(c=>c.checked=false); updateBulk();
+      });
+
+      // Bulk share
+      document.getElementById('bulkShare').addEventListener('click', ()=>{
+        const tokens=[...checks].filter(c=>c.checked).map(c=>c.dataset.token);
+        if(!tokens.length) return;
+        selectedVideos=tokens; buildLinks(); openModal('shareModal');
+      });
+
+      // Bulk delete
+      document.getElementById('bulkDelete').addEventListener('click', async ()=>{
+        const ids=[...checks].filter(c=>c.checked).map(c=>c.value);
+        if(!ids.length) return;
+        if(!confirm(`Yakin hapus ${ids.length} video?`)) return;
+        try{
+          const results=await Promise.all(ids.map(id =>
+            fetch(`/api/videos/${id}`, { method:'DELETE', credentials:'include' })
+              .then(r=>r.json().catch(()=>({error:'Invalid JSON'})))
+          ));
+          const failed=results.filter(r=>!r || !r.success);
+          if(failed.length){ alert('Sebagian gagal dihapus.'); }
+          location.reload();
+        }catch(e){
+          console.error(e); alert('Gagal menghapus.');
+        }
+      });
+
+      // Single rename
+      document.querySelectorAll('.action-btn.rename').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          currentVideoId = btn.dataset.id;
+          document.getElementById('renameInput').value = btn.dataset.title || '';
+          openModal('renameModal');
+        });
+      });
+      document.getElementById('saveRename').addEventListener('click', async ()=>{
+        const newName=document.getElementById('renameInput').value.trim();
+        if(!newName) return alert('Judul tidak boleh kosong.');
+        try{
+          const r=await fetch(`/api/videos/${currentVideoId}`, {
+            method:'PUT',
+            headers:{'Content-Type':'application/json'},
+            credentials:'include',
+            body:JSON.stringify({ title:newName })
+          });
+          const data=await r.json();
+          if(data.success){ alert('Berhasil rename!'); location.reload(); }
+          else{ alert(data.error || 'Gagal rename!'); }
+        }catch(e){ console.error(e); alert('Gagal rename!'); }
+        closeModal('renameModal');
+      });
+
+      // Single share
+      document.querySelectorAll('.action-btn.share').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          selectedVideos=[btn.dataset.token]; buildLinks(); openModal('shareModal');
+        });
+      });
+
+      // Single delete
+      document.querySelectorAll('.action-btn.delete').forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+          if(!confirm('Yakin hapus video ini?')) return;
+          try{
+            const r=await fetch(`/api/videos/${btn.dataset.id}`, { method:'DELETE', credentials:'include' });
+            const data=await r.json();
+            if(data.success){ alert('Video dihapus!'); location.reload(); }
+            else{ alert(data.error || 'Gagal hapus video!'); }
+          }catch(e){ console.error(e); alert('Gagal hapus video!'); }
+        });
+      });
+
+      // Pagination
+      const perPageEl = document.getElementById('perPage');
+      const pageInfo = document.getElementById('pageInfo');
+      const nextBtn = document.getElementById('nextPage');
+      const prevBtn = document.getElementById('prevPage');
+      const allItems=[...listEl.children];
+
+      function renderPage(){
+        const start=(currentPage-1)*perPage, end=start+perPage;
+        allItems.forEach((li,i)=> li.style.display=(i>=start && i<end)?'flex':'none');
+        pageInfo.textContent=`Page ${currentPage}`;
+        prevBtn.disabled = currentPage===1;
+        nextBtn.disabled = currentPage*perPage >= allItems.length;
+      }
+      nextBtn.addEventListener('click', ()=>{ if(currentPage*perPage<allItems.length){ currentPage++; renderPage(); }});
+      prevBtn.addEventListener('click', ()=>{ if(currentPage>1){ currentPage--; renderPage(); }});
+      perPageEl.addEventListener('change', ()=>{ perPage=parseInt(perPageEl.value,10); currentPage=1; renderPage(); });
+
+      // Modal share dynamic
+      document.querySelectorAll('input[name="linkType"], #domainSelect').forEach(el=>{
+        el.addEventListener('change', buildLinks);
+      });
+
+      // Init
+      renderPage();
+    });
+  </script>
+</body>
+</html>
