@@ -1,49 +1,115 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>Alenstream — Embed Auto</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css" />
-  <script src="/js/blok.js"></script>
+  <meta charset="UTF-8">
+  <title>Alenstream — Embed</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css"/>
   <style>
-    html, body {margin:0; padding:0; width:100%; height:100%; background:#000; overflow:hidden; font-family:sans-serif;}
-    #videoContainer {position:fixed; top:0; left:0; width:100%; height:100%; background:#000; display:flex; align-items:center; justify-content:center;}
-    video {width:100%; height:100vh; object-fit:contain; background:#000; border:0;}
-    .plyr {width:100%!important; height:100%!important; max-width:100%!important;}
-    .plyr__video-wrapper {height:100%!important;}
-    #overlayContainer {position:absolute; top:0; left:0; width:100%; height:100%;
-      display:flex; align-items:center; justify-content:center; z-index:20;
-      background:rgba(0,0,0,0.6);}
-    #clickOverlay {width:90px; height:90px; background:#0d6efd; border-radius:50%;
-      display:flex; align-items:center; justify-content:center; cursor:pointer;
-      transition:0.3s; box-shadow:0 0 20px rgba(13,110,253,0.6); animation:pulse 1.5s infinite;}
-    #clickOverlay:hover {background:#0b5ed7; transform:scale(1.1);}
-    #clickOverlay svg {width:45px; height:45px; fill:white;}
-    @keyframes pulse {0%{transform:scale(1);}50%{transform:scale(1.08);}100%{transform:scale(1);}}
-    #loadingOverlay {position:absolute; top:0; left:0; width:100%; height:100%;
-      background:rgba(0,0,0,0.85); display:flex; align-items:center; justify-content:center;
-      z-index:30; display:none;}
-    .spinner {width:60px; height:60px; border:6px solid rgba(255,255,255,0.2);
-      border-top-color:#0d6efd; border-radius:50%; animation:spin 1s linear infinite;}
-    @keyframes spin {0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+    body { margin:0; background:#000; display:flex; justify-content:center; align-items:center; height:100vh; overflow:hidden; }
+    #overlay {
+      position:absolute; top:0; left:0; right:0; bottom:0;
+      display:flex; justify-content:center; align-items:center;
+      background:rgba(0,0,0,0.65); cursor:pointer; z-index:10;
+    }
+    #playBtn {
+      width:80px; height:80px; border-radius:50%;
+      background:#0d6efd; display:flex; justify-content:center; align-items:center;
+      color:#fff; font-size:30px; animation:pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow:0 0 0 0 rgba(13,110,253,.7); }
+      70% { box-shadow:0 0 0 20px rgba(13,110,253,0); }
+      100%{ box-shadow:0 0 0 0 rgba(13,110,253,0); }
+    }
+    video { width:100%; height:100%; background:#000; object-fit:cover; }
   </style>
 </head>
 <body>
-  <div id="videoContainer">
-    <!-- <video> akan dibuat dinamis oleh embed.js -->
+  <div id="overlay"><div id="playBtn">▶</div></div>
+  <video id="player" playsinline controls preload="metadata" poster=""></video>
 
-    <div id="overlayContainer">
-      <div id="clickOverlay">
-        <svg viewBox="0 0 200 200"><polygon points="70,55 70,145 145,100" /></svg>
-      </div>
-    </div>
+<script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.polyfilled.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script>
+(async () => {
+  const token = location.pathname.split("/").pop(); 
+  const res = await fetch("/api/videos/by-token/" + encodeURIComponent(token));
+  if (!res.ok) return alert("❌ Video tidak ditemukan");
+  const v = await res.json();
 
-    <div id="loadingOverlay"><div class="spinner"></div></div>
-  </div>
+  const video = document.getElementById("player");
+  const player = new Plyr(video);
+  let hls, clickCount = 0;
 
-  <script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.polyfilled.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <script src="/js/embed.gate.js"></script>
+  // 🔥 ambil signed URL langsung untuk pre-load (thumbnail efek)
+  async function loadPreview() {
+    const r = await fetch(`/api/videos/${v.id}/signed`, { credentials: "include" });
+    const d = await r.json();
+    if (!d.url) return;
+
+    if (d.url.endsWith(".m3u8")) {
+      if (Hls.isSupported()) {
+        if (hls) hls.destroy();
+        hls = new Hls();
+        hls.loadSource(d.url);
+        hls.attachMedia(video);
+      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        video.src = d.url;
+      }
+    } else {
+      video.src = d.url;
+    }
+    video.load();
+    video.pause(); // biar berhenti di frame awal
+  }
+
+  // fungsi refresh tiap 45 detik saat sudah play
+  async function refreshSignedUrl() {
+    const r = await fetch(`/api/videos/${v.id}/signed`, { credentials: "include" });
+    const d = await r.json();
+    if (!d.url) return;
+    const currentTime = player.currentTime || 0;
+
+    if (d.url.endsWith(".m3u8")) {
+      if (Hls.isSupported()) {
+        if (hls) hls.destroy();
+        hls = new Hls();
+        hls.loadSource(d.url);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          video.currentTime = currentTime;
+          player.play();
+        });
+      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        video.src = d.url;
+        video.currentTime = currentTime;
+        player.play();
+      }
+    } else {
+      video.src = d.url;
+      video.currentTime = currentTime;
+      player.play();
+    }
+  }
+
+  // overlay klik
+  document.getElementById("overlay").addEventListener("click", async () => {
+    clickCount++;
+    if (clickCount === 1) {
+      window.open("https://example.com/directlink", "_blank");
+    } else if (clickCount === 2) {
+      await fetch(`/api/videos/${v.id}/view`, { method:"POST" });
+      document.getElementById("overlay").style.display = "none";
+      await refreshSignedUrl();
+      setInterval(refreshSignedUrl, 45000);
+    }
+  });
+
+  // load awal buat nampilin frame awal
+  await loadPreview();
+})();
+</script>
+
 </body>
 </html>
