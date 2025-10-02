@@ -4,44 +4,33 @@ import crypto from "crypto";
 import db from "../db.js";
 import { authenticateToken } from "../middleware/auth.js";
 import jwt from "jsonwebtoken";
-import fetch from "node-fetch";
-
+// import fetch from "node-fetch";
 
 const router = express.Router();
 const SECRET = process.env.STREAM_SECRET || "streaming-secret";
 
 /**
- * Generate token unik buat embed link
+ * 🔑 Generate token acak untuk embed link
  */
 function generateToken(length = 9) {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
-  const chars = alphabet.length;
   let token = "";
   for (let i = 0; i < length; i++) {
-    const rand = crypto.randomInt(0, chars);
-    token += alphabet[rand];
+    token += alphabet[crypto.randomInt(0, alphabet.length)];
   }
   return token;
 }
 
 /**
- * Normalisasi sumber video (videy, dood, videq, lixstream, dll)
+ * 🌍 Normalisasi sumber video
  */
 function normalizeVideo(sourceUrl) {
   try {
     const u = new URL(sourceUrl);
-    if (u.hostname.includes("videy")) {
-      return { source: "videy", video_id: u.pathname.split("/").pop() };
-    }
-    if (u.hostname.includes("dood") || u.hostname.includes("dsvplay")) {
-      return { source: "doodstream", video_id: u.pathname.split("/").pop() };
-    }
-    if (u.hostname.includes("videq")) {
-      return { source: "videq", video_id: u.pathname.split("/").pop() };
-    }
-    if (u.hostname.includes("lixstream")) {
-      return { source: "lixstream", video_id: u.pathname.split("/").pop() };
-    }
+    if (u.hostname.includes("videy")) return { source: "videy", video_id: u.pathname.split("/").pop() };
+    if (u.hostname.includes("dood") || u.hostname.includes("dsvplay")) return { source: "doodstream", video_id: u.pathname.split("/").pop() };
+    if (u.hostname.includes("videq")) return { source: "videq", video_id: u.pathname.split("/").pop() };
+    if (u.hostname.includes("lixstream")) return { source: "lixstream", video_id: u.pathname.split("/").pop() };
     return { source: u.hostname, video_id: sourceUrl };
   } catch {
     return { source: "unknown", video_id: sourceUrl };
@@ -49,16 +38,23 @@ function normalizeVideo(sourceUrl) {
 }
 
 /**
+ * 📦 Mapping CDN
+ */
+const cdnMap = {
+  videy: id => `https://cdn.videy.co/${id}.mp4`,
+  doodstream: id => `https://dsvplay.com/e/${id}`,
+  videq: id => `https://videq.pw/e/${id}`,
+  lixstream: id => `https://lixstream.com/e/${id}`,
+};
+
+/**
  * ➕ Tambah video
  */
 router.post("/", authenticateToken, (req, res) => {
   const { title, video_id, source } = req.body || {};
-  if (!title || !video_id) {
-    return res.status(400).json({ error: "title & video_id required" });
-  }
+  if (!title || !video_id) return res.status(400).json({ error: "title & video_id required" });
 
   const embed_token = generateToken();
-
   db.run(
     "INSERT INTO videos(user_id,title,source,video_id,embed_token) VALUES(?,?,?,?,?)",
     [req.user.id, title, source || "videy", video_id, embed_token],
@@ -95,10 +91,9 @@ router.get("/", authenticateToken, (req, res) => {
  * 🔗 Ambil video public by token
  */
 router.get("/by-token/:token", (req, res) => {
-  const t = String(req.params.token || "");
   db.get(
     "SELECT id,title,source,video_id,embed_token,views,created_at FROM videos WHERE embed_token = ?",
-    [t],
+    [req.params.token],
     (err, row) => {
       if (err) return res.status(500).json({ error: "DB error" });
       if (!row) return res.status(404).json({ error: "Not found" });
@@ -112,9 +107,7 @@ router.get("/by-token/:token", (req, res) => {
  */
 router.post("/remote", authenticateToken, (req, res) => {
   const { title, sourceUrl } = req.body || {};
-  if (!title || !sourceUrl) {
-    return res.status(400).json({ error: "Judul & URL wajib." });
-  }
+  if (!title || !sourceUrl) return res.status(400).json({ error: "Judul & URL wajib." });
 
   const { source, video_id } = normalizeVideo(sourceUrl);
   const embed_token = generateToken();
@@ -133,13 +126,11 @@ router.post("/remote", authenticateToken, (req, res) => {
  * ✏️ Rename video
  */
 router.put("/:id", authenticateToken, (req, res) => {
-  const { id } = req.params;
-  const { title } = req.body;
-  if (!title) return res.status(400).json({ error: "Judul wajib." });
+  if (!req.body.title) return res.status(400).json({ error: "Judul wajib." });
 
   db.run(
     "UPDATE videos SET title = ? WHERE id = ? AND user_id = ?",
-    [title, id, req.user.id],
+    [req.body.title, req.params.id, req.user.id],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       if (this.changes === 0) return res.status(404).json({ error: "Video tidak ditemukan" });
@@ -152,40 +143,36 @@ router.put("/:id", authenticateToken, (req, res) => {
  * ❌ Hapus video
  */
 router.delete("/:id", authenticateToken, (req, res) => {
-  db.run("DELETE FROM videos WHERE id=? AND user_id=?", [req.params.id, req.user.id], function(err){
-    if (err) return res.status(500).json({ success:false, error:err.message });
-    if (this.changes === 0) return res.status(404).json({ success:false, error:"Video tidak ditemukan" });
-    res.json({ success:true });
+  db.run("DELETE FROM videos WHERE id=? AND user_id=?", [req.params.id, req.user.id], function (err) {
+    if (err) return res.status(500).json({ success: false, error: err.message });
+    if (this.changes === 0) return res.status(404).json({ success: false, error: "Video tidak ditemukan" });
+    res.json({ success: true });
   });
 });
 
 /**
- * 👁️ Hitung view + earnings (maks 2 view/IP/24 jam per video)
+ * 👁️ Hitung view + earnings (maks 2 view/IP/24 jam)
  */
 router.post("/:id/view", (req, res) => {
   const { id } = req.params;
-  const rawIp =
-    req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
-    req.socket.remoteAddress || "0.0.0.0";
+  const rawIp = req.headers["x-forwarded-for"]?.split(",")[0].trim() || req.socket.remoteAddress || "0.0.0.0";
   const ip = rawIp.replace(/^::ffff:/, "").replace(/^::1$/, "127.0.0.1");
   const ipHash = crypto.createHash("sha256").update(ip).digest("hex");
 
   db.get(
-    `SELECT COUNT(id) AS cnt FROM views WHERE video_id = ? AND ip_hash = ? AND created_at >= datetime('now','-24 hours')`,
+    `SELECT COUNT(id) AS cnt FROM views WHERE video_id=? AND ip_hash=? AND created_at >= datetime('now','-24 hours')`,
     [id, ipHash],
     (err, row) => {
       if (err) return res.status(500).json({ error: "DB error" });
-      if ((row?.cnt ?? 0) >= 2) {
-        return res.json({ success: true, counted: false, reason: "quota_exceeded" });
-      }
+      if ((row?.cnt ?? 0) >= 2) return res.json({ success: true, counted: false, reason: "quota_exceeded" });
 
-      db.run("INSERT INTO views(video_id, ip_hash) VALUES(?,?)", [id, ipHash], function (err2) {
-        if (err2) return res.status(500).json({ error: "DB error" });
-
+      db.serialize(() => {
+        db.run("INSERT INTO views(video_id, ip_hash) VALUES(?,?)", [id, ipHash]);
         db.run("UPDATE videos SET views = views + 1 WHERE id = ?", [id]);
-        db.get("SELECT user_id FROM videos WHERE id=?", [id], (err3, video) => {
-          if (!err3 && video) {
-            const amount = 0.0008; // $0.8 CPM
+
+        db.get("SELECT user_id FROM videos WHERE id=?", [id], (err2, video) => {
+          if (!err2 && video) {
+            const amount = 0.0008;
             const today = new Date().toISOString().slice(0, 10);
 
             db.run(
@@ -207,18 +194,18 @@ router.post("/:id/view", (req, res) => {
             );
           }
         });
-
-        res.json({ success: true, counted: true });
       });
+
+      res.json({ success: true, counted: true });
     }
   );
 });
 
 /**
- * 🔑 Generate signed streaming URL (60 detik)
+ * 🔑 Generate signed streaming URL
  */
 router.get("/:id/signed", authenticateToken, (req, res) => {
-  db.get("SELECT id, video_id, source FROM videos WHERE id=? AND user_id=?", [req.params.id, req.user.id], (err, video) => {
+  db.get("SELECT id FROM videos WHERE id=? AND user_id=?", [req.params.id, req.user.id], (err, video) => {
     if (err) return res.status(500).json({ error: "DB error" });
     if (!video) return res.status(404).json({ error: "Video tidak ditemukan" });
 
@@ -228,7 +215,7 @@ router.get("/:id/signed", authenticateToken, (req, res) => {
 });
 
 /**
- * 🎥 Proxy streaming video (signed)
+ * 🎥 Streaming ringan (redirect ke CDN, browser handle HLS/MP4)
  */
 router.get("/:id/stream", async (req, res) => {
   try {
@@ -237,31 +224,19 @@ router.get("/:id/stream", async (req, res) => {
       return res.status(403).send("Invalid token");
     }
 
-    db.get("SELECT video_id, source FROM videos WHERE id=?", [req.params.id], async (err, video) => {
+    db.get("SELECT video_id, source FROM videos WHERE id=?", [req.params.id], (err, video) => {
       if (err || !video) return res.status(404).send("Video not found");
 
-      let cdnUrl;
-      if (video.source === "videy") {
-        cdnUrl = `https://cdn.videy.co/${video.video_id}.mp4`;
-      } else if (video.source === "doodstream") {
-        cdnUrl = `https://dsvplay.com/e/${video.video_id}`;
-      } else if (video.source === "videq") {
-        cdnUrl = `https://videq.pw/e/${video.video_id}`;
-      } else if (video.source === "lixstream") {
-        cdnUrl = `https://lixstream.com/e/${video.video_id}`;
-      } else {
-        cdnUrl = video.video_id; // fallback direct
-      }
+      const cdnUrl = cdnMap[video.source]?.(video.video_id) || video.video_id;
 
-      const response = await fetch(cdnUrl);
-      if (!response.ok) return res.status(500).send("Failed to fetch video");
-
-      res.setHeader("Content-Type", "video/mp4");
-      response.body.pipe(res);
+      // redirect ke CDN, biar browser handle langsung (lebih lancar m3u8/mp4)
+      res.redirect(cdnUrl);
     });
   } catch {
     res.status(403).send("Token expired/invalid");
   }
 });
+
+
 
 export default router;
