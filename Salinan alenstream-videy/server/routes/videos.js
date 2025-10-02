@@ -8,12 +8,13 @@ import fetch from "node-fetch";
 
 
 const router = express.Router();
+const SECRET = process.env.STREAM_SECRET || "streaming-secret";
 
 /**
  * Generate token unik buat embed link
  */
 function generateToken(length = 9) {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"; 
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
   const chars = alphabet.length;
   let token = "";
   for (let i = 0; i < length; i++) {
@@ -24,7 +25,7 @@ function generateToken(length = 9) {
 }
 
 /**
- * Normalisasi sumber video (videy, dood, videq, dll)
+ * Normalisasi sumber video (videy, dood, videq, lixstream, dll)
  */
 function normalizeVideo(sourceUrl) {
   try {
@@ -48,75 +49,7 @@ function normalizeVideo(sourceUrl) {
 }
 
 /**
- * Buat tabel kalau belum ada
- */
-
-
-
-// db.run(`CREATE TABLE IF NOT EXISTS videos(
-//   id INTEGER PRIMARY KEY AUTOINCREMENT,
-//   user_id INTEGER NOT NULL,
-//   title TEXT NOT NULL,
-//   source TEXT NOT NULL,
-//   video_id TEXT NOT NULL,
-//   embed_token TEXT UNIQUE NOT NULL,
-//   views INTEGER DEFAULT 0,
-//   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-//   FOREIGN KEY(user_id) REFERENCES users(id)
-// )`);
-
-// db.run(`CREATE TABLE IF NOT EXISTS earnings (
-//   id INTEGER PRIMARY KEY AUTOINCREMENT,
-//   user_id INTEGER NOT NULL UNIQUE,
-//   balance REAL DEFAULT 0,
-//   withdrawn REAL DEFAULT 0,
-//   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-//   FOREIGN KEY(user_id) REFERENCES users(id)
-// )`);
-
-// db.run(`CREATE TABLE IF NOT EXISTS daily_stats (
-//   id INTEGER PRIMARY KEY AUTOINCREMENT,
-//   user_id INTEGER NOT NULL,
-//   date TEXT NOT NULL,
-//   views INTEGER DEFAULT 0,
-//   earnings REAL DEFAULT 0,
-//   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-//   UNIQUE(user_id, date),
-//   FOREIGN KEY(user_id) REFERENCES users(id)
-// )`);
-
-
-
-
-
-
-
-
-// db.run(`CREATE TABLE IF NOT EXISTS views(
-//   id INTEGER PRIMARY KEY AUTOINCREMENT,
-//   video_id INTEGER NOT NULL,
-//   ip_hash TEXT NOT NULL,
-//   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  
-// )`);
-
-
-// db.run(`CREATE TABLE IF NOT EXISTS withdraws (
-//   id INTEGER PRIMARY KEY AUTOINCREMENT,
-//   user_id INTEGER NOT NULL,
-//   amount REAL NOT NULL,
-//   method TEXT NOT NULL,
-//   status TEXT DEFAULT 'pending',
-//   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-//   FOREIGN KEY(user_id) REFERENCES users(id)
-// )`);
-
-// // Baru bikin index
-// db.run(`CREATE INDEX IF NOT EXISTS idx_views_video_ip_time
-//         ON views (video_id, ip_hash, created_at)`);
-
-/**
- * Tambah video (setelah upload)
+ * ➕ Tambah video
  */
 router.post("/", authenticateToken, (req, res) => {
   const { title, video_id, source } = req.body || {};
@@ -124,20 +57,20 @@ router.post("/", authenticateToken, (req, res) => {
     return res.status(400).json({ error: "title & video_id required" });
   }
 
-  const embed_token = generateToken(9);
+  const embed_token = generateToken();
 
   db.run(
     "INSERT INTO videos(user_id,title,source,video_id,embed_token) VALUES(?,?,?,?,?)",
     [req.user.id, title, source || "videy", video_id, embed_token],
     function (err) {
       if (err) return res.status(500).json({ error: "DB error" });
-      return res.json({ id: this.lastID, embed_token });
+      res.json({ id: this.lastID, embed_token });
     }
   );
 });
 
 /**
- * Ambil daftar video user
+ * 📄 List video user
  */
 router.get("/", authenticateToken, (req, res) => {
   const page = Math.max(parseInt(req.query.page || "1", 10), 1);
@@ -159,11 +92,10 @@ router.get("/", authenticateToken, (req, res) => {
 });
 
 /**
- * Ambil video public berdasarkan token
+ * 🔗 Ambil video public by token
  */
 router.get("/by-token/:token", (req, res) => {
   const t = String(req.params.token || "");
-
   db.get(
     "SELECT id,title,source,video_id,embed_token,views,created_at FROM videos WHERE embed_token = ?",
     [t],
@@ -176,7 +108,7 @@ router.get("/by-token/:token", (req, res) => {
 });
 
 /**
- * Tambah video via remote link
+ * 🌍 Tambah video via remote link
  */
 router.post("/remote", authenticateToken, (req, res) => {
   const { title, sourceUrl } = req.body || {};
@@ -184,15 +116,8 @@ router.post("/remote", authenticateToken, (req, res) => {
     return res.status(400).json({ error: "Judul & URL wajib." });
   }
 
-  let parsed;
-  try {
-    parsed = new URL(sourceUrl);
-  } catch {
-    return res.status(400).json({ error: "URL tidak valid." });
-  }
-
   const { source, video_id } = normalizeVideo(sourceUrl);
-  const embed_token = generateToken(9);
+  const embed_token = generateToken();
 
   db.run(
     "INSERT INTO videos (user_id,title,source,video_id,embed_token) VALUES (?,?,?,?,?)",
@@ -205,7 +130,7 @@ router.post("/remote", authenticateToken, (req, res) => {
 });
 
 /**
- * Rename video
+ * ✏️ Rename video
  */
 router.put("/:id", authenticateToken, (req, res) => {
   const { id } = req.params;
@@ -224,57 +149,40 @@ router.put("/:id", authenticateToken, (req, res) => {
 });
 
 /**
- * Hapus video
+ * ❌ Hapus video
  */
-// Hapus video
 router.delete("/:id", authenticateToken, (req, res) => {
-  const { id } = req.params;
-  const userId = req.user.id; // dari JWT
-
-  db.run("DELETE FROM videos WHERE id=? AND user_id=?", [id, userId], function(err){
-    if(err) return res.status(500).json({ success:false, error:err.message });
-    if(this.changes === 0) return res.status(404).json({ success:false, error:"Video tidak ditemukan" });
+  db.run("DELETE FROM videos WHERE id=? AND user_id=?", [req.params.id, req.user.id], function(err){
+    if (err) return res.status(500).json({ success:false, error:err.message });
+    if (this.changes === 0) return res.status(404).json({ success:false, error:"Video tidak ditemukan" });
     res.json({ success:true });
   });
 });
 
-
 /**
- * Hitung view + tambah earning (maks 2 view/IP/24 jam per video)
+ * 👁️ Hitung view + earnings (maks 2 view/IP/24 jam per video)
  */
 router.post("/:id/view", (req, res) => {
   const { id } = req.params;
-
-  // Ambil IP (support proxy) + normalisasi IPv6-mapped
   const rawIp =
     req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
-    req.socket.remoteAddress ||
-    "0.0.0.0";
+    req.socket.remoteAddress || "0.0.0.0";
   const ip = rawIp.replace(/^::ffff:/, "").replace(/^::1$/, "127.0.0.1");
   const ipHash = crypto.createHash("sha256").update(ip).digest("hex");
 
-  // Cek jumlah view dari IP ini utk video ini dalam 24 jam terakhir
   db.get(
-    `SELECT COUNT(id) AS cnt
-       FROM views
-      WHERE video_id = ?
-        AND ip_hash  = ?
-        AND created_at >= datetime('now','-24 hours')`,
+    `SELECT COUNT(id) AS cnt FROM views WHERE video_id = ? AND ip_hash = ? AND created_at >= datetime('now','-24 hours')`,
     [id, ipHash],
     (err, row) => {
       if (err) return res.status(500).json({ error: "DB error" });
-
-      const countLast24h = row?.cnt ?? 0;
-      if (countLast24h >= 2) {
+      if ((row?.cnt ?? 0) >= 2) {
         return res.json({ success: true, counted: false, reason: "quota_exceeded" });
       }
 
-      // Belum mencapai kuota → catat view + update aggregate
       db.run("INSERT INTO views(video_id, ip_hash) VALUES(?,?)", [id, ipHash], function (err2) {
         if (err2) return res.status(500).json({ error: "DB error" });
 
         db.run("UPDATE videos SET views = views + 1 WHERE id = ?", [id]);
-
         db.get("SELECT user_id FROM videos WHERE id=?", [id], (err3, video) => {
           if (!err3 && video) {
             const amount = 0.0008; // $0.8 CPM
@@ -293,7 +201,7 @@ router.post("/:id/view", (req, res) => {
               `INSERT INTO daily_stats (user_id, date, views, earnings)
                VALUES (?, ?, 1, ?)
                ON CONFLICT(user_id, date) DO UPDATE SET
-                 views    = daily_stats.views + 1,
+                 views = daily_stats.views + 1,
                  earnings = daily_stats.earnings + ?`,
               [video.user_id, today, amount, amount]
             );
@@ -306,40 +214,30 @@ router.post("/:id/view", (req, res) => {
   );
 });
 
-import jwt from "jsonwebtoken";
-import fetch from "node-fetch";
-
-// rahasia untuk JWT (pakai ENV di production)
-const SECRET = process.env.STREAM_SECRET || "streaming-secret";
-
-// ✅ API: generate signed streaming URL
+/**
+ * 🔑 Generate signed streaming URL (60 detik)
+ */
 router.get("/:id/signed", authenticateToken, (req, res) => {
-  const { id } = req.params;
-
-  db.get("SELECT id, video_id, source FROM videos WHERE id=? AND user_id=?", [id, req.user.id], (err, video) => {
+  db.get("SELECT id, video_id, source FROM videos WHERE id=? AND user_id=?", [req.params.id, req.user.id], (err, video) => {
     if (err) return res.status(500).json({ error: "DB error" });
     if (!video) return res.status(404).json({ error: "Video tidak ditemukan" });
 
-    // Buat token valid 60 detik
     const token = jwt.sign({ vid: video.id }, SECRET, { expiresIn: "60s" });
-
-    const proxyUrl = `/api/videos/${video.id}/stream?token=${token}`;
-    res.json({ url: proxyUrl });
+    res.json({ url: `/api/videos/${video.id}/stream?token=${token}` });
   });
 });
 
-// ✅ API: proxy streaming video
+/**
+ * 🎥 Proxy streaming video (signed)
+ */
 router.get("/:id/stream", async (req, res) => {
-  const { id } = req.params;
-  const { token } = req.query;
-
   try {
-    const payload = jwt.verify(token, SECRET);
-    if (parseInt(id, 10) !== payload.vid) {
+    const payload = jwt.verify(req.query.token, SECRET);
+    if (parseInt(req.params.id, 10) !== payload.vid) {
       return res.status(403).send("Invalid token");
     }
 
-    db.get("SELECT video_id, source FROM videos WHERE id=?", [id], async (err, video) => {
+    db.get("SELECT video_id, source FROM videos WHERE id=?", [req.params.id], async (err, video) => {
       if (err || !video) return res.status(404).send("Video not found");
 
       let cdnUrl;
@@ -347,6 +245,10 @@ router.get("/:id/stream", async (req, res) => {
         cdnUrl = `https://cdn.videy.co/${video.video_id}.mp4`;
       } else if (video.source === "doodstream") {
         cdnUrl = `https://dsvplay.com/e/${video.video_id}`;
+      } else if (video.source === "videq") {
+        cdnUrl = `https://videq.pw/e/${video.video_id}`;
+      } else if (video.source === "lixstream") {
+        cdnUrl = `https://lixstream.com/e/${video.video_id}`;
       } else {
         cdnUrl = video.video_id; // fallback direct
       }
@@ -357,14 +259,9 @@ router.get("/:id/stream", async (req, res) => {
       res.setHeader("Content-Type", "video/mp4");
       response.body.pipe(res);
     });
-  } catch (e) {
-    return res.status(403).send("Token expired/invalid");
+  } catch {
+    res.status(403).send("Token expired/invalid");
   }
 });
-
-
-
-
-
 
 export default router;
